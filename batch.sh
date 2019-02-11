@@ -5,13 +5,26 @@ GPP_DBG='g++ -Wall -Wextra -std=gnu++11 -g'
 # python3 rand.py > in.txt
 # cat in.txt
 
-$GPP_DBG sol.cpp
-if [ "$?" = "0" ]; then
-    for f in testcases/*.in; do
-        ./a.out < $f | diff - "${f%.in}.out"
-        if [ "$?" != "0" ]; then
-            echo "Answer failed on $f"
-            cat $f
-        fi
-    done
-fi
+test() {
+    $GPP_DBG sol.cpp
+    if [ "$?" = "0" ]; then
+        for f in testcases/*.in; do
+            ./a.out < $f | diff - "${f%.in}.out"
+            if [ "$?" != "0" ]; then
+                echo "Answer failed on $f"
+                cat $f
+            fi
+        done
+    fi
+}
+
+gen() {
+    $GPP sol.cpp
+    if [ "$?" = "0" ]; then
+        for f in testcases/*.in; do
+            ./a.out < $f > "${f%.in}.out"
+        done
+    fi
+}
+
+gen

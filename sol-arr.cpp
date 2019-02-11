@@ -58,9 +58,9 @@ struct Term {
 };
 
 const int MAXN = 20000020;
-vector<Term> F; // stores product terms (original and merged), at most (2 * MAXN) terms
+Term F[MAXN]; // stores product terms (original and merged), at most (2 * MAXN) terms
 vector<int> mark;
-int N, L, Q;
+int N, L, Q, Fn=0;
 bool used[MAXN];
 
 #ifdef DBG
@@ -113,13 +113,13 @@ void bfs(int root, int loff, int roff) {
             // if v is in F
             // TODO: cut prune: only when not visit is binary search necessary
             // TODO: cut prune to reduce time complexity
-            int _v = lower_bound(F.begin() + loff, F.begin() + roff, v) - F.begin();
+            int _v = lower_bound(F + loff, F + roff, v) - F;
             // fout << "v" << v << " _v" << _v << endl;
             if (_v != roff && _v != pa && F[_v].term == v) {
                 // fout << "u" << u << " -> v" << v << " pa=" << pa;
                 v[i] = '-';
                 // fout << " pushed_merged_term=" << v << endl;
-                F.push_back(Term(v, make_pair(_u, _v)));
+                F[Fn++] = Term(v, make_pair(_u, _v));
 
                 if (!used[_v]) {
                     used[_v] = true;
@@ -132,7 +132,7 @@ void bfs(int root, int loff, int roff) {
 }
 
 void find_prime_implicants() {
-    int offset = 0, nxt_offset = F.size();
+    int offset = 0, nxt_offset = Fn;
     for (int round=0; round < 20 && 1 << round <= N; round++) {
         // fout << "round=" << round << " offset=" << offset << " nxt_offset="<< nxt_offset << " F:" << F << endl;
 
@@ -141,22 +141,22 @@ void find_prime_implicants() {
             if (!used[i])
                 bfs(i, offset, nxt_offset);
 
-        if (F.size() == nxt_offset) break;
+        if (Fn == nxt_offset) break;
         mark.push_back(nxt_offset);
         offset = nxt_offset;
 
         // TODO: find way to make it unique during BFS
-        sort(F.begin() + offset, F.end());
-        F.erase(unique(F.begin() + offset, F.end()), F.end());
+        sort(F + offset, F + Fn);
+        Fn = unique(F + offset, F + Fn);
 
-        nxt_offset = F.size();
+        nxt_offset = Fn;
     }
 }
 
 void output_prime_implicants() {
     fout << "mark:" <<mark<<endl;
     int i = 0, j = 0, cnt = 0;
-    while (i < F.size() && j < mark.size()) {
+    while (i < Fn && j < mark.size()) {
         // fout << F[i] << ' ';
         cnt++;
         if (i == mark[j] - 1) {
@@ -167,7 +167,7 @@ void output_prime_implicants() {
         }
         i++;
     }
-    while (i < F.size())
+    while (i < Fn)
         cnt++, i++;
     cout << cnt << '\n';
 }
@@ -180,13 +180,13 @@ int reduce_prime_implicants() {
         // fout << "k=" << k << endl;
 
         bool suc = true;
-        vector<bool> fil(F.size()); // filter
-        FOR(i, F.size()-k, F.size()) fil[i] = true;
+        vector<bool> fil(Fn); // filter
+        FOR(i, Fn-k, Fn) fil[i] = true;
         do {
             suc = true;
             // fout << "fil:" << fil << endl;
             vector<bool> sel(N);
-            FOR(i, 0, F.size()) {
+            FOR(i, 0, Fn) {
                 if (fil[i]) {
                     for (int j : F[i].cover) {
                         // fout << "cover[" << F[i] << "]=" << F[j] << endl;
@@ -232,14 +232,14 @@ int main() {
         string x;
         cin >> x;
         assert(x.size() == L);
-        F.push_back(Term(x, make_pair(i, i)));
+        F[Fn++] = Term(x, make_pair(i, i));
     }
 
     // to be removed
     // input will guaranteed to be unique
-    sort(F.begin(), F.end());
-    F.erase(unique(F.begin(), F.end()), F.end());
-    N = F.size();
+    sort(F, F + Fn);
+    Fn = unique(F, F + Fn);
+    N = Fn;
     FOR(i, 0, N) {
         F[i].son = make_pair(i, i);
     }
@@ -250,10 +250,10 @@ int main() {
     fout << "F: " << F << endl;
 
     if (Q == 2) {
-        FOR(i, 0, F.size())
+        FOR(i, 0, Fn)
             build_cover(i, i);
 
-        // FOR(i, 0, F.size()) {
+        // FOR(i, 0, Fn) {
         //     fout << "cover[" << F[i] << "]: ";
         //     for (int j : F[i].cover)
         //         fout << F[j] << ',';
