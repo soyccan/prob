@@ -26,6 +26,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <exception>
 #include <queue>
@@ -58,8 +59,15 @@ struct Term {
 
 const int MAXN = 100020;
 vector<Term> F; // stores product terms (original and merged), at most (2 * MAXN) terms
-int N;
+vector<int> mark;
+int N, L, Q;
 bool used[MAXN];
+
+#ifdef DBG
+ostream& fout = cout;
+#else
+stringstream fout;
+#endif
 
 template<typename T>
 ostream& operator<<(ostream& sout, vector<T> arr) {
@@ -82,43 +90,6 @@ ostream& operator<<(ostream& sout, Term t) {
     return sout << t.term;
 }
 
-// void init() {
-//     F.clear();
-//     memset(used, 0, sizeof used);
-// }
-
-// void dfs(int _u, int round, int pa) {
-//     used[_u] = true;
-//     const string& u = F[round][_u];
-//     cout << 'u' << u << "\n";
-
-//     // find all v such that u -> v
-//     FOR(i,0,u.size()) {
-//         string v = u;
-//         if (v[i] == '0') v[i] = '1';
-//         else if (v[i] == '1') v[i] = '0';
-//         else if (v[i] == '-') continue;
-//         else throw new exception();
-
-//         // if v is in F
-//         // TODO: cut prune: only when not visit is binary search necessary
-//         // TODO: cut prune to reduce time complexity
-//         int _v = lower_bound(F[round].begin(), F[round].end(), v) - F[round].begin();
-//         // cout << "v" << v << " _v" << _v << endl;
-//         if (_v != F[round].size() && _v != pa && F[round][_v] == v) {
-//             cout << "u" << u << " -> v" << v;
-//             v[i] = '-';
-//             cout << " pushed: round=" << round << " merged_term=" << v << endl;
-//             F[round+1].push_back(v);
-
-//             if (!used[_v]) {
-//                 dfs(_v, round, _u);
-//             }
-//         }
-//     }
-//     cout << endl;
-// }
-
 void bfs(int root, int loff, int roff) {
     queue<pair<int,int>> q; // (nxt, pa)
     q.push({root, -1});
@@ -129,7 +100,7 @@ void bfs(int root, int loff, int roff) {
         q.pop();
 
         string u = F[_u].term;
-        cout << 'u' << u << "\n";
+        // fout << 'u' << u << "\n";
 
         // find all v such that u -> v
         FOR(i, 0, u.size()) {
@@ -143,11 +114,11 @@ void bfs(int root, int loff, int roff) {
             // TODO: cut prune: only when not visit is binary search necessary
             // TODO: cut prune to reduce time complexity
             int _v = lower_bound(F.begin() + loff, F.begin() + roff, v) - F.begin();
-            // cout << "v" << v << " _v" << _v << endl;
+            // fout << "v" << v << " _v" << _v << endl;
             if (_v != roff && _v != pa && F[_v].term == v) {
-                cout << "u" << u << " -> v" << v << " pa=" << pa;
+                // fout << "u" << u << " -> v" << v << " pa=" << pa;
                 v[i] = '-';
-                cout << " pushed_merged_term=" << v << endl;
+                // fout << " pushed_merged_term=" << v << endl;
                 F.push_back(Term(v, make_pair(_u, _v)));
 
                 if (!used[_v]) {
@@ -156,50 +127,69 @@ void bfs(int root, int loff, int roff) {
                 }
             }
         }
-        cout << endl;
+        // fout << endl;
     }
 }
 
 void find_prime_implicants() {
     int offset = 0, nxt_offset = F.size();
     for (int round=0; round < 20 && 1 << round <= N; round++) {
-        cout << "round=" << round << " offset=" << offset << " nxt_offset="<< nxt_offset << " F:" << F << endl;
+        // fout << "round=" << round << " offset=" << offset << " nxt_offset="<< nxt_offset << " F:" << F << endl;
 
         memset(used, 0, sizeof used);
         FOR(i, offset, nxt_offset)
             if (!used[i])
                 bfs(i, offset, nxt_offset);
 
-
+        if (F.size() == nxt_offset) break;
+        mark.push_back(nxt_offset);
         offset = nxt_offset;
 
         // TODO: find way to make it unique during BFS
         sort(F.begin() + offset, F.end());
         F.erase(unique(F.begin() + offset, F.end()), F.end());
 
-        if (F.size() == nxt_offset) break;
         nxt_offset = F.size();
     }
 }
 
+void output_prime_implicants() {
+    // fout << "mark:" <<mark<<endl;
+    int i = 0, j = 0, cnt = 0;
+    while (i < F.size() && j < mark.size()) {
+        // fout << F[i] << ' ';
+        cnt++;
+        if (i == mark[j] - 1) {
+            j++;
+            // fout << F[i] << '\n';
+            cout << cnt << ' ';
+            cnt = 0;
+        }
+        i++;
+    }
+    while (i < F.size())
+        cnt++, i++;
+    cout << cnt << '\n';
+}
+
 int reduce_prime_implicants() {
-    cout << "F: " << F << endl;
+    // fout << "F: " << F << endl;
     int l = 1, r = N;
     while (l < r) {
         int k = (l + r) / 2;
-        cout << "k=" << k << endl;
+        // fout << "k=" << k << endl;
 
         bool suc = true;
         vector<bool> fil(F.size()); // filter
         FOR(i, F.size()-k, F.size()) fil[i] = true;
         do {
             suc = true;
-            cout << "fil:" << fil << endl;
+            // fout << "fil:" << fil << endl;
             vector<bool> sel(N);
             FOR(i, 0, F.size()) {
                 if (fil[i]) {
                     for (int j : F[i].cover) {
-                        cout << "cover[" << F[i] << "]=" << F[j] << endl;
+                        // fout << "cover[" << F[i] << "]=" << F[j] << endl;
                         sel[j] = true;
                     }
                 }
@@ -207,7 +197,7 @@ int reduce_prime_implicants() {
             FOR(i, 0, N)
                  if (!sel[i])
                     suc = false;
-            cout << "sel:" << sel << endl << endl;
+            // fout << "sel:" << sel << endl << endl;
             if (suc) break;
         } while (next_permutation(fil.begin(), fil.end()));
 
@@ -219,7 +209,7 @@ int reduce_prime_implicants() {
 }
 
 void build_cover(int rt, int i) {
-    cout << "rt=" << F[rt] << " F[" << i << "]=" << F[i] << " son=(" << F[ F[i].son.first ] << "," << F[ F[i].son.second ] << ")\n";
+    // fout << "rt=" << F[rt] << " F[" << i << "]=" << F[i] << " son=(" << F[ F[i].son.first ] << "," << F[ F[i].son.second ] << ")\n";
 
     if (F[i].son.first == i && F[i].son.second == i) {
         F[rt].cover.push_back(i);
@@ -231,27 +221,40 @@ void build_cover(int rt, int i) {
 }
 
 int main() {
-    cin >> N;
+    cin >> N >> L >> Q;
     FOR(i, 0, N) {
         string x;
         cin >> x;
+        assert(x.size() == L);
         F.push_back(Term(x, make_pair(i, i)));
     }
 
-    find_prime_implicants();
-
-    FOR(i, 0, F.size())
-        build_cover(i, i);
-
-    FOR(i, 0, F.size()) {
-        cout << "cover[" << F[i] << "]: ";
-        for (int j : F[i].cover)
-            cout << F[j] << ',';
-        cout << endl;
+    // to be removed
+    // input will guaranteed to be unique
+    sort(F.begin(), F.end());
+    F.erase(unique(F.begin(), F.end()), F.end());
+    N = F.size();
+    FOR(i, 0, N) {
+        F[i].son = make_pair(i, i);
     }
 
-    int r = reduce_prime_implicants();
-    cout << r << endl;
+    find_prime_implicants();
+    output_prime_implicants();
+
+    if (Q == 2) {
+        FOR(i, 0, F.size())
+            build_cover(i, i);
+
+        // FOR(i, 0, F.size()) {
+        //     fout << "cover[" << F[i] << "]: ";
+        //     for (int j : F[i].cover)
+        //         fout << F[j] << ',';
+        //     fout << endl;
+        // }
+
+        int r = reduce_prime_implicants();
+        cout << r << '\n';
+    }
 
     return 0;
 }
