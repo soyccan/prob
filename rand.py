@@ -3,9 +3,9 @@
 from random import randint as R
 from random import choice
 
-N = 10000000
-L = 24
-Q = 1
+N = 23
+L = 8
+Q = 2
 T = set()
 
 for _ in range(N):

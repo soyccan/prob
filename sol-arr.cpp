@@ -44,6 +44,7 @@ struct Term {
     pair<int, int> son;
     vector<int> cover;
 
+    Term() {}
     Term(string term, pair<int, int> son): term(term), son(son) {}
 
     bool operator<(string s) const {
@@ -57,7 +58,7 @@ struct Term {
     }
 };
 
-const int MAXN = 20000020;
+const int MAXN = 4000020;
 Term F[MAXN]; // stores product terms (original and merged), at most (2 * MAXN) terms
 vector<int> mark;
 int N, L, Q, Fn=0;
@@ -147,14 +148,14 @@ void find_prime_implicants() {
 
         // TODO: find way to make it unique during BFS
         sort(F + offset, F + Fn);
-        Fn = unique(F + offset, F + Fn);
+        Fn = unique(F + offset, F + Fn) - F;
 
         nxt_offset = Fn;
     }
 }
 
 void output_prime_implicants() {
-    fout << "mark:" <<mark<<endl;
+    // fout << "mark:" <<mark<<endl;
     int i = 0, j = 0, cnt = 0;
     while (i < Fn && j < mark.size()) {
         // fout << F[i] << ' ';
@@ -237,17 +238,17 @@ int main() {
 
     // to be removed
     // input will guaranteed to be unique
-    sort(F, F + Fn);
-    Fn = unique(F, F + Fn);
-    N = Fn;
-    FOR(i, 0, N) {
-        F[i].son = make_pair(i, i);
-    }
+    // sort(F, F + Fn);
+    // Fn = unique(F, F + Fn) - F;
+    // N = Fn;
+    // FOR(i, 0, N) {
+    //     F[i].son = make_pair(i, i);
+    // }
 
     find_prime_implicants();
     output_prime_implicants();
 
-    fout << "F: " << F << endl;
+    // fout << "F: " << F << endl;
 
     if (Q == 2) {
         FOR(i, 0, Fn)

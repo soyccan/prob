@@ -134,7 +134,10 @@ void bfs(int root, int loff, int roff) {
 void find_prime_implicants() {
     int offset = 0, nxt_offset = F.size();
     for (int round=0; round < 20 && 1 << round <= N; round++) {
-        // fout << "round=" << round << " offset=" << offset << " nxt_offset="<< nxt_offset << " F:" << F << endl;
+        // fout << "round=" << round << " offset=" << offset << " nxt_offset="<< nxt_offset;
+        // FOR(i, 0, F.size())
+        //     fout << "round" << round << " " << F[i] << '\n';
+        // fout << "Fsz=" << F.size() << endl;
 
         memset(used, 0, sizeof used);
         FOR(i, offset, nxt_offset)
@@ -154,7 +157,7 @@ void find_prime_implicants() {
 }
 
 void output_prime_implicants() {
-    fout << "mark:" <<mark<<endl;
+    // fout << "mark:" <<mark<<endl;
     int i = 0, j = 0, cnt = 0;
     while (i < F.size() && j < mark.size()) {
         // fout << F[i] << ' ';
@@ -237,12 +240,12 @@ int main() {
 
     // to be removed
     // input will guaranteed to be unique
-    sort(F.begin(), F.end());
-    F.erase(unique(F.begin(), F.end()), F.end());
-    N = F.size();
-    FOR(i, 0, N) {
-        F[i].son = make_pair(i, i);
-    }
+    // sort(F.begin(), F.end());
+    // F.erase(unique(F.begin(), F.end()), F.end());
+    // N = F.size();
+    // FOR(i, 0, N) {
+    //     F[i].son = make_pair(i, i);
+    // }
 
     find_prime_implicants();
     output_prime_implicants();
