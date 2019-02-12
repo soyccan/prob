@@ -158,18 +158,21 @@ void find_prime_implicants() {
 
 void output_prime_implicants() {
     // fout << "mark:" <<mark<<endl;
+    // fout << "F:" <<F<<endl;
     int i = 0, j = 0, cnt = 0;
     while (i < F.size() && j < mark.size()) {
         // fout << F[i] << ' ';
+        // fout << i << ' ' << j << ' ' << F.size() << endl;
         cnt++;
         if (i == mark[j] - 1) {
             j++;
-            // fout << F[i] << '\n';
+            // fout << F[i] << endl;
             cout << cnt << ' ';
             cnt = 0;
         }
         i++;
     }
+    // fout << i << ' ' << j << ' ' << F.size() << endl;
     while (i < F.size())
         cnt++, i++;
     cout << cnt << '\n';
@@ -224,11 +227,8 @@ void build_cover(int rt, int i) {
 }
 
 int main() {
-#ifdef EVAL
-#define endl '\n'
     ios::sync_with_stdio(0);
     cin.tie(0);
-#endif
 
     cin >> N >> L >> Q;
     FOR(i, 0, N) {
@@ -248,9 +248,19 @@ int main() {
     // }
 
     find_prime_implicants();
-    output_prime_implicants();
 
-    fout << "F: " << F << endl;
+    if (mark.size()) {
+        cout << mark[0] << ' ';
+        FOR(i, 1, mark.size())
+            cout << mark[i] - mark[i-1] << ' ';
+        cout << F.size() - mark[ mark.size() - 1 ] << '\n';
+    }
+    else
+        cout << F.size() << '\n';
+
+    // output_prime_implicants();
+
+    // fout << "F: " << F << endl;
 
     if (Q == 2) {
         FOR(i, 0, F.size())
