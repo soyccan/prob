@@ -3,8 +3,8 @@
 from random import randint as R
 from random import choice
 
-N = 23
-L = 8
+N = 22
+L = 9
 Q = 2
 T = set()
 

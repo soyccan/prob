@@ -177,7 +177,7 @@ void output_prime_implicants() {
 
 int reduce_prime_implicants() {
     // fout << "F: " << F << endl;
-    for (int k=1; k<=F.size(); k++) {
+    for (int k=1; k<F.size(); k++) {
         // fout << "k=" << k << endl;
 
         bool suc = true;
@@ -244,7 +244,17 @@ int main() {
     // }
 
     find_prime_implicants();
-    output_prime_implicants();
+    // output_prime_implicants();
+
+    if (mark.size()) {
+        cout << mark[0] << ' ';
+        FOR(i, 1, mark.size())
+            cout << mark[i] - mark[i-1] << ' ';
+        cout << F.size() - mark[ mark.size() - 1 ] << '\n';
+    }
+    else
+        cout << F.size() << '\n';
+
 
     fout << "F: " << F << endl;
 
