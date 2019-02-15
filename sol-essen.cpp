@@ -41,7 +41,7 @@ struct Term {
 const int MAXN = 20000020;
 vector<Term> F; // stores product terms (original and merged), at most (2 * MAXN) terms
 vector<int> mark;
-vector<int> require[MAXN];
+int require[MAXN];
 int N, L, Q;
 bool used[MAXN];
 
@@ -282,16 +282,20 @@ int main() {
             if (!F[i].discard)
                 build_cover(i, i);
 
+        memset(require, -1, sizeof require);
         FOR(i, 0, F.size())
             if (!F[i].discard)
                 for (int j : F[i].cover) {
-                    // assert(j >= 0 && j <= N);
-                    require[j].push_back(i);
+                    assert(j >= 0 && j <= N);
+                    if (require[j] == -1)
+                        require[j] = i;
+                    else
+                        require[j] = -2;
                 }
         FOR(i, 0, N) {
-            // assert(require[i].size() > 0);
-            if (require[i].size() == 1)
-                F[ require[i][0] ].essen = true;
+            assert(require[i] != -1);
+            if (require[i] != -2)
+                F[ require[i] ].essen = true;
         }
 
         // FOR(i, 0, F.size()) {
