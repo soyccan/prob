@@ -190,25 +190,36 @@ int reduce_prime_implicants() {
 
         bool suc = true;
         vector<bool> fil(F.size()); // filter
-        FOR(i, F.size()-k, F.size()) fil[i] = true;
+        FOR(i, 0, k) fil[i] = true;
         do {
-            suc = true;
+            bool cont = false;
             // fout << "fil:" << fil << endl;
             vector<bool> sel(N);
             FOR(i, 0, F.size()) {
                 if (fil[i]) {
+                    if (F[i].discard) {
+                        cont = true;
+                        break;
+                    }
                     for (int j : F[i].cover) {
                         // fout << "cover[" << F[i] << "]=" << F[j] << endl;
                         sel[j] = true;
                     }
                 }
+                else if (F[i].essen) {
+                    cont = true;
+                    break;
+                }
             }
+            if (cont) continue;
+
+            suc = true;
             FOR(i, 0, N)
                  if (!sel[i])
                     suc = false;
             // fout << "sel:" << sel << endl << endl;
             if (suc) break;
-        } while (next_permutation(fil.begin(), fil.end()));
+        } while (prev_permutation(fil.begin(), fil.end()));
 
         if (suc) r = k;
         else l = k + 1;
