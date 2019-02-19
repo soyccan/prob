@@ -1,27 +1,6 @@
 // by:
 // soytw
-//
-// problem:
-// given a boolean function by sum of minterms,
-// simplify it as a sum of least product terms
-//
-// solution:
-// depth-first search of implicit graph (or BFS?)
-// find out all essential prime implicants
-//
-// range:
-// L := number of arguments
-// N := number of minterms
-// N <= 2^L
-// (undone...)
-//
-// time complexity:
-// sort: L * N * Log(N)
-// bfs: E + V
-//     = N * L * L * log(N) + N
-//     = L^2 * N * log(N)
-//     <= L^2 * 2^L * log(2^L)
-//     = L^3 * 2^L
+// sol-essen.cpp
 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
@@ -43,8 +22,10 @@ struct Term {
     string term;
     pair<int, int> son;
     vector<int> cover;
+    bool essen, discard;
 
-    Term(string term, pair<int, int> son): term(term), son(son) {}
+    Term(string term, pair<int, int> son):
+        term(term), son(son), essen(false), discard(false) {}
 
     bool operator<(string s) const {
         return term < s;
@@ -60,6 +41,7 @@ struct Term {
 const int MAXN = 20000020;
 vector<Term> F; // stores product terms (original and merged), at most (2 * MAXN) terms
 vector<int> mark;
+int require[MAXN];
 int N, L, Q;
 bool used[MAXN];
 
@@ -73,18 +55,18 @@ template<typename T>
 ostream& operator<<(ostream& sout, vector<T> arr) {
     sout << '[';
     if (arr.size() >= 1) {
-        sout << arr[0];
+        sout << arr[0] << "_e" << arr[0].essen << "_d" << arr[0].discard;
         FOR(i, 1, arr.size())
-            sout << ", " << arr[i];
+            sout << ", " << arr[i] << "_e" << arr[i].essen << "_d" << arr[i].discard;
     }
     sout << ']';
     return sout;
 }
 
-template<typename T>
-ostream& operator<<(ostream& sout, pair<T,T> p) {
-    return sout << '(' << p.first << ',' << p.second << ')';
-}
+// template<typename T>
+// ostream& operator<<(ostream& sout, pair<T,T> p) {
+//     return sout << '(' << p.first << ',' << p.second << ')';
+// }
 
 ostream& operator<<(ostream& sout, Term t) {
     return sout << t.term;
@@ -120,6 +102,7 @@ void bfs(int root, int loff, int roff) {
                 v[i] = '-';
                 // fout << " pushed_merged_term=" << v << endl;
                 F.push_back(Term(v, make_pair(_u, _v)));
+                F[_u].discard = F[_v].discard = true;
 
                 if (!used[_v]) {
                     used[_v] = true;
@@ -156,61 +139,92 @@ void find_prime_implicants() {
     }
 }
 
-void output_prime_implicants() {
-    // fout << "mark:" <<mark<<endl;
-    // fout << "F:" <<F<<endl;
-    int i = 0, j = 0, cnt = 0;
-    while (i < F.size() && j < mark.size()) {
-        // fout << F[i] << ' ';
-        // fout << i << ' ' << j << ' ' << F.size() << endl;
-        cnt++;
-        if (i == mark[j] - 1) {
-            j++;
-            // fout << F[i] << endl;
-            cout << cnt << ' ';
-            cnt = 0;
-        }
-        i++;
-    }
-    // fout << i << ' ' << j << ' ' << F.size() << endl;
-    while (i < F.size())
-        cnt++, i++;
-    cout << cnt << '\n';
-}
+// void output_prime_implicants() {
+//     // fout << "mark:" <<mark<<endl;
+//     // fout << "F:" <<F<<endl;
+//     int i = 0, j = 0, cnt = 0;
+//     while (i < F.size() && j < mark.size()) {
+//         // fout << F[i] << ' ';
+//         // fout << i << ' ' << j << ' ' << F.size() << endl;
+//         cnt++;
+//         if (i == mark[j] - 1) {
+//             j++;
+//             // fout << F[i] << endl;
+//             cout << cnt << ' ';
+//             cnt = 0;
+//         }
+//         i++;
+//     }
+//     // fout << i << ' ' << j << ' ' << F.size() << endl;
+//     while (i < F.size())
+//         cnt++, i++;
+//     cout << cnt << '\n';
+// }
 
 int reduce_prime_implicants() {
     // fout << "F: " << F << endl;
-    int l = 1, r = N;
+
+    sort(F.begin() + N, F.end(), [](Term& a, Term& b) {
+        if (a.discard != b.discard)
+            return b.discard;
+        if (a.essen != b.essen)
+            return a.essen;
+        return a.cover.size() > b.cover.size();
+    });
+    // fout << "F: " << F << endl;
+
+    int i = N;
+    while (i < F.size() && !F[i].discard) i++;
+    F.erase(F.begin() + i, F.end());
+    // fout << "F: " << F << endl;
+
+    int essen_cnt = 0, disc_cnt = 0;
+    FOR(i, 0, F.size())
+        if (F[i].essen) essen_cnt++;
+        else if (F[i].discard) disc_cnt++;
+
+    int l = max(essen_cnt, 1), r = min(N, (int)F.size() - disc_cnt);
     while (l < r) {
         int k = (l + r) / 2;
-        fout << "l=" << l << " r=" << r << " k=" << k << endl;
+        // fout << "l=" << l << " r=" << r << " k=" << k << endl;
 
         bool suc = true;
         vector<bool> fil(F.size()); // filter
-        FOR(i, F.size()-k, F.size()) fil[i] = true;
+        FOR(i, 0, k) fil[i] = true;
         do {
-            suc = true;
+            bool cont = false;
             // fout << "fil:" << fil << endl;
             vector<bool> sel(N);
             FOR(i, 0, F.size()) {
                 if (fil[i]) {
+                    if (F[i].discard) {
+                        cont = true;
+                        break;
+                    }
                     for (int j : F[i].cover) {
                         // fout << "cover[" << F[i] << "]=" << F[j] << endl;
                         sel[j] = true;
                     }
                 }
+                else if (F[i].essen) {
+                    cont = true;
+                    break;
+                }
             }
+            if (cont) continue;
+
+            suc = true;
             FOR(i, 0, N)
                  if (!sel[i])
                     suc = false;
             // fout << "sel:" << sel << endl << endl;
             if (suc) break;
-        } while (next_permutation(fil.begin(), fil.end()));
+        } while (prev_permutation(fil.begin(), fil.end()));
 
         if (suc) r = k;
         else l = k + 1;
     }
-    assert(l == r);
+    // assert(l == r);
     return r;
 }
 
@@ -232,10 +246,14 @@ int main() {
 
     cin >> N >> L >> Q;
     FOR(i, 0, N) {
-        string x;
+        int x;
         cin >> x;
-        assert(x.size() == L);
-        F.push_back(Term(x, make_pair(i, i)));
+        string s;
+        for (; s.size() < L; x >>= 1)
+            s.push_back('0' + (x & 1));
+        assert(s.size() == L);
+        reverse(s.begin(), s.end());
+        F.push_back(Term(s, make_pair(i, i)));
     }
 
     // to be removed
@@ -261,16 +279,33 @@ int main() {
 
     // output_prime_implicants();
 
-    // fout << "F: " << F << endl;
+    fout << "F: " << F << endl;
 
     if (Q == 2) {
         FOR(i, 0, F.size())
-            build_cover(i, i);
+            if (!F[i].discard)
+                build_cover(i, i);
+
+        memset(require, -1, sizeof require);
+        FOR(i, 0, F.size())
+            if (!F[i].discard)
+                for (int j : F[i].cover) {
+                    assert(j >= 0 && j <= N);
+                    if (require[j] == -1)
+                        require[j] = i;
+                    else
+                        require[j] = -2;
+                }
+        FOR(i, 0, N) {
+            assert(require[i] != -1);
+            if (require[i] != -2)
+                F[ require[i] ].essen = true;
+        }
 
         // FOR(i, 0, F.size()) {
-        //     fout << "cover[" << F[i] << "]: ";
+        //     fout << "cover[" << F[i].term << "]: ";
         //     for (int j : F[i].cover)
-        //         fout << F[j] << ',';
+        //         fout << F[j].term << ',';
         //     fout << endl;
         // }
 

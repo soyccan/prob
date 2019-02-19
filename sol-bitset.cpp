@@ -178,22 +178,64 @@ void output_prime_implicants() {
     cout << cnt << '\n';
 }
 
+unsigned ulog2(uint32_t v)
+{ /* Evaluates [log2 v] */
+  static const unsigned MUL_DE_BRUIJN_BIT[] =
+  {
+     0,  9,  1, 10, 13, 21,  2, 29, 11, 14, 16, 18, 22, 25,  3, 30,
+     8, 12, 20, 28, 15, 17, 24,  7, 19, 27, 23,  6, 26,  5,  4, 31
+  };
+
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+
+  return MUL_DE_BRUIJN_BIT[(v * 0x07C4ACDDu) >> 27];
+}
+
+int nxt(int x) {
+    assert(x != 0);
+
+    // int suf[32] = { 0,1,0,2,0,1,0,3,0,1,0,2,0,1,0,4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0,5 }; // hanoi tower
+    // int psuf[32] = {0};
+    // FOR(i, 1, 32) psuf[i] = psuf[i-1] + suf[i];
+
+    int l = x + 1, r = (1U << 22) - 1U;
+    while (l < r) { // TODO: verify the correctness of binary search
+        int y = (l + r) / 2;
+        if (y - x == psuf[y-1] - psuf[x-1])
+            r = y;
+        else
+            l = y + 1;
+    }
+    assert(l == r);
+    return l;
+}
+
 int reduce_prime_implicants() {
-    // fout << "F: " << F << endl;
+    fout << "F: " << F << endl;
     int l = 1, r = N;
     while (l < r) {
         int k = (l + r) / 2;
-        fout << "l=" << l << " r=" << r << " k=" << k << endl;
+        fout << "k=" << k << endl;
 
         bool suc = true;
-        vector<bool> fil(F.size()); // filter
-        FOR(i, F.size()-k, F.size()) fil[i] = true;
-        do {
+        int n = F.size();
+        for (int fil = (1<<k) - 1; fil <= ( (1<<n) - (1<<(n-k)) ); fil=nxt(fil)) { // filter
+            int aaaa = fil;
+            fout <<"fil: ";
+            while (aaaa > 0) {
+                fout << (aaaa % 2);
+                aaaa /= 2;
+            }
+            fout << endl;
+
             suc = true;
-            // fout << "fil:" << fil << endl;
             vector<bool> sel(N);
-            FOR(i, 0, F.size()) {
-                if (fil[i]) {
+            for (int i=0; i<n; i++) {
+                if (fil >> i & 1) {
                     for (int j : F[i].cover) {
                         // fout << "cover[" << F[i] << "]=" << F[j] << endl;
                         sel[j] = true;
@@ -205,7 +247,7 @@ int reduce_prime_implicants() {
                     suc = false;
             // fout << "sel:" << sel << endl << endl;
             if (suc) break;
-        } while (next_permutation(fil.begin(), fil.end()));
+        }
 
         if (suc) r = k;
         else l = k + 1;

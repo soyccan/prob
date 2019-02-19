@@ -55,9 +55,9 @@ bool used[MAXN];
 // ostream& operator<<(ostream& sout, vector<T> arr) {
 //     sout << '[';
 //     if (arr.size() >= 1) {
-//         sout << arr[0] << "_e" << arr[0].essen << "_d" << arr[0].discard;
+//         sout << arr[0].term << "_e" << arr[0].essen << "_d" << arr[0].discard;
 //         FOR(i, 1, arr.size())
-//             sout << ", " << arr[i] << "_e" << arr[i].essen << "_d" << arr[i].discard;
+//             sout << ", " << arr[i].term << "_e" << arr[i].essen << "_d" << arr[i].discard;
 //     }
 //     sout << ']';
 //     return sout;
@@ -171,12 +171,13 @@ int reduce_prime_implicants() {
             return a.essen;
         return a.cover.size() > b.cover.size();
     });
-    // fout << "F: " << F << endl;
+    // cout << "F: " << F << endl;
 
     int i = N;
     while (i < F.size() && !F[i].discard) i++;
     F.erase(F.begin() + i, F.end());
-    // fout << "F: " << F << endl;
+    // cout << "F: " << F << endl;
+    assert(F.size() <= 2*N);
 
     int essen_cnt = 0, disc_cnt = 0;
     FOR(i, 0, F.size())

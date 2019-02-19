@@ -3,14 +3,15 @@
 from random import randint as R
 from random import choice
 
-N = 22
-L = 9
-Q = 2
+N = 7000
+L = 13
+Q = 1
 T = set()
 
 for _ in range(N):
     T.add(R(0, (1 << L) - 1))
-
+T = list(T)[:9000]
+T.sort()
 N = len(T)
 print(N, L, Q)
 
